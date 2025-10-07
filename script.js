@@ -3,7 +3,7 @@ let pagename = [];
 let maprows = [];
 let countryall = [];
 let selectedPage = null;
-let panZoomInstance = null; // ★ズーム/パンのインスタンスを保持
+let panZoomInstance = null;
 
 // 建国機能用の変数
 let isCreatingCountry = false;
@@ -11,10 +11,28 @@ let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("https://script.google.com/macros/s/AKfycbz3oFciZskbNgOWtUi8cPzubuSvQL4jWqjf304GVARAnN03fZOFaDcE3zJXKrWCkeMjMA/exec") // ※必ずご自身のGASのURLに書き換えてください
+fetch("GASのURL") // ※必ずご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
     console.log("取得したデータ:", data);
+    
+    // ★★★ SVGの入れ子構造をプログラムで修正 ★★★
+    // 外側のSVG(#wrapper)を削除し、内側のSVG(#map)を直接の操作対象にする
+    const mapContainer = document.getElementById('map-container');
+    const innerSvg = document.getElementById('map'); // 地図本体のSVG
+    const wrapperSvg = document.getElementById('wrapper'); // 外側のSVG
+
+    if (mapContainer && innerSvg && wrapperSvg) {
+        mapContainer.removeChild(wrapperSvg); // コンテナから外側SVGを一旦削除
+        mapContainer.appendChild(innerSvg);   // コンテナに内側SVGだけを再配置
+        console.log("SVGの構造を動的に修正しました。");
+    } else {
+        console.error("SVGの構造修正に失敗しました。HTML内のSVGのID(wrapper, map)を確認してください。");
+        alert("マップの読み込みに失敗しました。SVGの構造を確認してください。");
+        return;
+    }
+    // ★★★ 構造の修正ここまで ★★★
+
     const map = data["MapData"];
     const country = data["CountryData"];
 
@@ -25,20 +43,17 @@ fetch("https://script.google.com/macros/s/AKfycbz3oFciZskbNgOWtUi8cPzubuSvQL4jWq
     setupUI();
     initialMapRender();
 
-    // ★★★ ドラックとズーム機能の初期化 ★★★
-    // 地図の描画が完了した後に実行
-    panZoomInstance = svgPanZoom('#map-svg', {
+    // ★★★ ドラックとズーム機能の初期化 (対象を #map に変更) ★★★
+    panZoomInstance = svgPanZoom('#map', { // ターゲットを #map に変更
       zoomEnabled: true,
       panEnabled: true,
-      controlIconsEnabled: true, // 右下の+/-ボタンを表示
-      fit: true,    // SVGをコンテナにフィットさせる
-      center: true, // SVGを中央に配置
+      controlIconsEnabled: true,
+      fit: true,
+      center: true,
       minZoom: 0.5,
       maxZoom: 10,
-      // ドラッグ中はクリックイベントを発火させないようにライブラリが自動で処理します
     });
     
-    // ウィンドウサイズ変更時にリサイズ
     window.addEventListener('resize', () => {
         panZoomInstance.resize();
         panZoomInstance.fit();
@@ -67,17 +82,21 @@ function createPageButton(buttonName) {
 function setupUI() {
     pagename.forEach(name => createPageButton(name));
     
-    document.querySelectorAll("svg path").forEach(path => {
+    // ★クリックイベントの対象を #map 内のpathに限定
+    document.querySelectorAll("#map path").forEach(path => {
         path.addEventListener("click", handleMapClick);
     });
 
     const createCountryBtn = document.getElementById('create-country-btn');
     if (createCountryBtn) createCountryBtn.addEventListener('click', handleCreateCountryBtnClick);
     
-    // 保存ボタンにイベントを設定
     const saveDataBtn = document.getElementById('save-data-btn');
     if (saveDataBtn) saveDataBtn.addEventListener('click', saveData);
 }
+
+// handleMapClick, handleCreateCountryBtnClick, displayPathInfo, getGradientColor, getRandomColor, saveData, initialMapRender
+// 以下の関数は以前の回答から変更ありません
+// ... (ここから下の関数は変更なし) ...
 
 function handleMapClick(event) {
     const path = event.currentTarget;
