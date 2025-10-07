@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>地図色塗り運営ツール</title>
     <?!= include('css'); ?>
+    <style>
+  body { font-family: sans-serif; margin: 20px; }
+  .container { margin-bottom: 20px; }
+  #button-container button { margin: 5px; cursor: pointer; }
+  #button-container button.active { border: 2px solid blue; font-weight: bold; }
+  .main-content { display: flex; gap: 20px; }
+  .map-container { flex: 3; }
+  #infoBox { flex: 1; border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9; }
+  #infoBox ul { list-style: none; padding-left: 0; }
+  #infoBox li { border-bottom: 1px solid #eee; padding: 5px 0; }
+  #infoBox li strong { display: inline-block; width: 80px; }
+</style>
 </head>
 <body>
     <h1>地図色塗り運営ツール</h1>
@@ -35,6 +47,7 @@
 
     <div class="main-content">
         <div class="map-container">
+            
             </div>
 
         <div id="infoBox">
