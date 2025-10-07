@@ -237,7 +237,7 @@ async function saveData() {
   const countryDataToSave = countryall;
   
   try {
-    const response = await fetch("GASのURL", { // ※必ずご自身のGASのURLに書き換えてください
+    const response = await fetch("https://script.google.com/macros/s/AKfycby5r0RKGNhU8MPwsr1NOz8qhuLzmM0u7JXp2hr9AVBlKhRtttWR-7RilToi0_ZlznnAvw/exec", { // ※必ずご自身のGASのURLに書き換えてください
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
