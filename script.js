@@ -11,7 +11,7 @@ let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("GASのURL") // ※必ずご自身のGASのURLに書き換えてください
+fetch("https://script.google.com/macros/s/AKfycbz3oFciZskbNgOWtUi8cPzubuSvQL4jWqjf304GVARAnN03fZOFaDcE3zJXKrWCkeMjMA/exec") // ※必ずご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
     console.log("取得したデータ:", data);
