@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地図色塗り運営ツール</title>
+    <?!= include('css'); ?>
+</head>
+<body>
+    <h1>地図色塗り運営ツール</h1>
+
+    <div class="container">
+        <form onsubmit="handleLogin(event)">
+            <input type="text" id="Login" placeholder="ユーザー名を入力">
+            <button type="submit">ログイン</button>
+        </form>
+        <div id="loginStatus">未ログイン</div>
+    </div>
+    
+    <hr>
+    
+    <div class="container">
+        <button id="create-country-btn">建国</button>
+        <button id="save-data-btn">サーバーに保存</button>
+    </div>
+
+    <hr>
+
+    <div class="container">
+        <h3>更新タブ選択</h3>
+        <div id="button-container"></div>
+    </div>
+
+    <hr>
+
+    <div class="main-content">
+        <div class="map-container">
+            </div>
+
+        <div id="infoBox">
+            <p>マスをクリックすると情報が表示されます。</p>
+        </div>
+    </div>
+    
+    <?!= include('javascript'); ?>
+</body>
+</html>
