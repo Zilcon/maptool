@@ -66,34 +66,58 @@ fetch("https://script.google.com/macros/s/AKfycby5r0RKGNhU8MPwsr1NOz8qhuLzmM0u7J
     alert('データの取得に失敗しました。ページを再読み込みしてください。');
   });
 
-function createPageButton(buttonName) {
+function createPageButton(buttonName, colIndex) {
   const btn = document.createElement("button");
   btn.innerText = buttonName;
-  btn.onclick = function() {
+  btn.dataset.colIndex = String(colIndex); // 明示的に列インデックスを保持
+
+  btn.addEventListener('click', function() {
     selectedPage = buttonName;
     document.querySelectorAll('#button-container button').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
 
-    // タブ選択時に地図を更新する
+    // タブ選択時に地図を更新
     updateMapBySelectedPage();
-  };
+  });
+
   const container = document.getElementById("button-container");
   if (container) container.appendChild(btn);
 }
 
 function setupUI() {
-    pagename.forEach(name => createPageButton(name));
-    
-    // ★クリックイベントの対象を #map 内のpathに限定
+    // ボタンコンテナをクリアしてから作成（念のため）
+    const container = document.getElementById("button-container");
+    if (!container) {
+      console.error("button-container が見つかりません。HTMLを確認してください。");
+      return;
+    }
+    container.innerHTML = '';
+
+    // pagename[0] はパスID列の想定なのでスキップして 1 から作る
+    pagename.forEach((name, idx) => {
+        if (idx === 0) return;
+        createPageButton(name, idx);
+    });
+
+    // map内のpathにクリックイベントを追加
     document.querySelectorAll("#map path").forEach(path => {
+        path.removeEventListener("click", handleMapClick); // 重複防止
         path.addEventListener("click", handleMapClick);
     });
 
     const createCountryBtn = document.getElementById('create-country-btn');
     if (createCountryBtn) createCountryBtn.addEventListener('click', handleCreateCountryBtnClick);
-    
+
     const saveDataBtn = document.getElementById('save-data-btn');
     if (saveDataBtn) saveDataBtn.addEventListener('click', saveData);
+
+    // 初期で最初のタブをアクティブにして地図を更新（存在すれば）
+    const firstBtn = container.querySelector('button');
+    if (firstBtn) {
+        firstBtn.classList.add('active');
+        selectedPage = firstBtn.innerText;
+        updateMapBySelectedPage();
+    }
 }
 
 // handleMapClick, handleCreateCountryBtnClick, displayPathInfo, getGradientColor, getRandomColor, saveData, initialMapRender
@@ -213,47 +237,52 @@ function handleCreateCountryBtnClick() {
 }
 
 function updateMapBySelectedPage() {
-  if (!selectedPage) return;
-  const colIndex = pagename.indexOf(selectedPage);
-  if (colIndex === -1) return;
+  if (!selectedPage) {
+    console.warn("selectedPage が未設定です。");
+    return;
+  }
+
+  // 優先してアクティブボタンの dataset から colIndex を取る
+  const activeBtn = document.querySelector('#button-container button.active');
+  let colIndex = activeBtn ? parseInt(activeBtn.dataset.colIndex, 10) : pagename.indexOf(selectedPage);
+  if (isNaN(colIndex)) {
+    console.error("列インデックスが解決できません:", selectedPage);
+    return;
+  }
+
+  console.log("updateMapBySelectedPage:", selectedPage, "colIndex=", colIndex);
 
   maprows.forEach(row => {
     const pathId = row[0];
     const path = document.getElementById(pathId);
-    if (!path) return;
+    if (!path) {
+      // 存在しないpathは無視（デバッグ出力）
+      console.warn("path が見つかりません:", pathId);
+      return;
+    }
 
-    const cellValue = row[colIndex];
+    const raw = row[colIndex];
+    const cellValue = (raw === undefined || raw === null) ? '' : String(raw).trim();
+    let fillColor = '';
 
     if (selectedPage === "国") {
-      // 国ごとに指定色で塗る
-      const countryInfo = countryall.find(c => c[0] === cellValue);
-      if (countryInfo) {
-        path.style.fill = countryInfo[1];
-      } else {
-        path.style.fill = "#ccc"; // 国情報がない場合はグレーなど
-      }
+      // 国名→countryall から色取得
+      const countryInfo = countryall.find(c => String(c[0]) === cellValue);
+      fillColor = countryInfo ? countryInfo[1] : '#cccccc'; // 国なしはグレー
     } else {
-      // 数値データに応じて色を塗る
-      const numValue = parseInt(cellValue, 10);
-      if (!isNaN(numValue)) {
-        path.style.fill = getGradientColor(numValue);
+      // 数値列→グラデ色（1〜100の想定）。範囲外はクリップ
+      const num = parseFloat(cellValue);
+      if (!isNaN(num)) {
+        const clipped = Math.min(Math.max(num, 1), 100);
+        fillColor = getGradientColor(clipped);
       } else {
-        path.style.fill = "#eee"; // データがない場合は薄灰色など
+        fillColor = '#eeeeee'; // データ無しは薄灰色
       }
     }
+
+    // 確実に反映させるため attribute を直接セット
+    path.setAttribute('fill', fillColor);
   });
-}
-
-
-function displayPathInfo(pathData) {
-    const infoBox = document.getElementById("infoBox");
-    if (infoBox) {
-        let listItems = pagename.map((header, index) => {
-            const value = pathData[index] || '（データなし）';
-            return `<li><strong>${header}:</strong> ${value}</li>`;
-        }).join('');
-        infoBox.innerHTML = `<h3>${pathData[0]}の情報</h3><ul>${listItems}</ul>`;
-    }
 }
 
 function getGradientColor(value) {
@@ -272,7 +301,7 @@ async function saveData() {
   const countryDataToSave = countryall;
   
   try {
-    const response = await fetch("GASのURL", { // ※必ずご自身のGASのURLに書き換えてください
+    const response = await fetch("https://script.google.com/macros/s/AKfycby5r0RKGNhU8MPwsr1NOz8qhuLzmM0u7JXp2hr9AVBlKhRtttWR-7RilToi0_ZlznnAvw/exec", { // ※必ずご自身のGASのURLに書き換えてください
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
@@ -300,10 +329,10 @@ function initialMapRender() {
             if (cellValue) {
                 if (tabName === "国") {
                     const userRow = countryall.find(c => c[0] === cellValue);
-                    if (userRow) path.style.fill = userRow[1];
+                    if (userRow) path.setAttribute('fill', userRow[1]);
                 } else {
                     const numValue = parseInt(cellValue, 10);
-                    if (!isNaN(numValue)) path.style.fill = getGradientColor(numValue);
+                    if (!isNaN(numValue)) path.setAttribute('fill', getGradientColor(numValue));
                 }
             }
         }
