@@ -124,6 +124,19 @@ function setupUI() {
 // 以下の関数は以前の回答から変更ありません
 // ... (ここから下の関数は変更なし) ...
 
+function displayPathInfo(pathData) {
+    const infoBox = document.getElementById("infoBox");
+    if (infoBox) {
+        let listItems = pagename.map((header, index) => {
+            const value = pathData[index] || '（データなし）';
+            return `<li><strong>${header}:</strong> ${value}</li>`;
+        }).join('');
+        infoBox.innerHTML = `<h3>${pathData[0]} の情報</h3><ul>${listItems}</ul>`;
+    } else {
+        console.warn("infoBox が見つかりません。HTMLに <div id='infoBox'> を用意してください。");
+    }
+}
+
 function handleMapClick(event) {
     const path = event.currentTarget;
     const datapath = path.id;
@@ -314,7 +327,7 @@ async function saveData() {
     console.error('保存エラー:', error);
     alert('データの保存に失敗しました。');
   }
-}
+
 
 function initialMapRender() {
     maprows.forEach(row => {
