@@ -71,9 +71,11 @@ function createPageButton(buttonName) {
   btn.innerText = buttonName;
   btn.onclick = function() {
     selectedPage = buttonName;
-    alert(`「${buttonName}」タブを選択しました。`);
     document.querySelectorAll('#button-container button').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
+
+    // タブ選択時に地図を更新する
+    updateMapBySelectedPage();
   };
   const container = document.getElementById("button-container");
   if (container) container.appendChild(btn);
@@ -209,6 +211,39 @@ function handleCreateCountryBtnClick() {
         selectedPathsForNewCountry = [];
     }
 }
+
+function updateMapBySelectedPage() {
+  if (!selectedPage) return;
+  const colIndex = pagename.indexOf(selectedPage);
+  if (colIndex === -1) return;
+
+  maprows.forEach(row => {
+    const pathId = row[0];
+    const path = document.getElementById(pathId);
+    if (!path) return;
+
+    const cellValue = row[colIndex];
+
+    if (selectedPage === "国") {
+      // 国ごとに指定色で塗る
+      const countryInfo = countryall.find(c => c[0] === cellValue);
+      if (countryInfo) {
+        path.style.fill = countryInfo[1];
+      } else {
+        path.style.fill = "#ccc"; // 国情報がない場合はグレーなど
+      }
+    } else {
+      // 数値データに応じて色を塗る
+      const numValue = parseInt(cellValue, 10);
+      if (!isNaN(numValue)) {
+        path.style.fill = getGradientColor(numValue);
+      } else {
+        path.style.fill = "#eee"; // データがない場合は薄灰色など
+      }
+    }
+  });
+}
+
 
 function displayPathInfo(pathData) {
     const infoBox = document.getElementById("infoBox");
