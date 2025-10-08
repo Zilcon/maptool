@@ -14,7 +14,7 @@ let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("https://script.google.com/macros/s/AKfycbx09zIksuZUotdQU5olnicBShWHcCPpcNl5RiCoHfPCh9wCKDmCRwaysAs9itjwmG_sFg/exec") // ※ご自身のGASのURLに書き換えてください
+fetch("https://script.google.com/macros/s/AKfycbwWPzuaq88SeqaB48MvKli4AOuhTHbKd4Yf8IHNf2lUg5-FPuvMArUsiuUTWQfL9w1B/exec") // ※ご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
     const mapContainer = document.getElementById('map-container');
@@ -252,7 +252,7 @@ async function saveData() {
     const mapDataToSave = [pagename, ...maprows];
     const countryDataToSave = countryall;
     try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbx09zIksuZUotdQU5olnicBShWHcCPpcNl5RiCoHfPCh9wCKDmCRwaysAs9itjwmG_sFg/exec", {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbwWPzuaq88SeqaB48MvKli4AOuhTHbKd4Yf8IHNf2lUg5-FPuvMArUsiuUTWQfL9w1B/exec", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
