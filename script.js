@@ -14,7 +14,7 @@ let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("https://misty-glitter-2ea1.zilcon211006.workers.dev/") // ※ご自身のGASのURLに書き換えてください
+fetch("https://script.google.com/macros/s/AKfycbyqyl07zRzJiLdr9UhKhMP1pwnpKVwqjiPh3m76F2i8vJHbDJQMF2KyA6XyYyVVb0SH/exec") // ※ご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
     const mapContainer = document.getElementById('map-container');
@@ -252,7 +252,7 @@ async function saveData() {
     const mapDataToSave = [pagename, ...maprows];
     const countryDataToSave = countryall;
     try {
-        const response = await fetch("https://misty-glitter-2ea1.zilcon211006.workers.dev/", {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyqyl07zRzJiLdr9UhKhMP1pwnpKVwqjiPh3m76F2i8vJHbDJQMF2KyA6XyYyVVb0SH/exec", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
