@@ -119,6 +119,7 @@ function renderMapForTab(tabName) {
 }
 
 function handleMapClick(path) {
+  console.log("クリックされたPathの情報:", path); // ★この行を追加
     const datapath = path.id;
     const rowIndex = maprows.findIndex(row => row[0] === datapath);
     if (rowIndex === -1) {
