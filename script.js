@@ -5,26 +5,25 @@ let countryall = [];
 let selectedPage = null;
 let panZoomInstance = null;
 
+// 手動ドラッグ判定用の変数
+let isDragging = false;
+
 // 建国機能用の変数
 let isCreatingCountry = false;
 let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("https://script.google.com/macros/s/AKfycbwSUuIcBqMcUFLzKQG0cRpiUw42SrWg9i9JNFzAVBsPnxgXG4TDmz2Y6d7gYgQANCNrAQ/exec") // ※必ずご自身のGASのURLに書き換えてください
+fetch("GASのURL") // ※ご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
-    console.log("取得したデータ:", data);
-    
     const mapContainer = document.getElementById('map-container');
     const innerSvg = document.getElementById('map');
     const wrapperSvg = document.getElementById('wrapper');
     if (mapContainer && innerSvg && wrapperSvg) {
         mapContainer.removeChild(wrapperSvg);
         mapContainer.appendChild(innerSvg);
-        console.log("SVGの構造を動的に修正しました。");
     } else {
-        console.error("SVGの構造修正に失敗しました。HTML内のSVGのID(wrapper, map)を確認してください。");
         alert("マップの読み込みに失敗しました。");
         return;
     }
@@ -37,27 +36,25 @@ fetch("https://script.google.com/macros/s/AKfycbwSUuIcBqMcUFLzKQG0cRpiUw42SrWg9i
 
     setupUI();
     
-    // 初期表示として最初のタブを選択状態にし、その内容で地図を描画
     if (pagename.length > 1) {
-        selectedPage = pagename[1]; // 最初のデータタブをデフォルトに（"ID"の次）
-        document.querySelector('#button-container button').classList.add('active');
+        selectedPage = pagename[1];
+        const firstButton = document.querySelector('#button-container button');
+        if(firstButton) firstButton.classList.add('active');
         renderMapForTab(selectedPage);
     }
 
+    // ★★★ pan/zoomのオプションを修正 ★★★
     panZoomInstance = svgPanZoom('#map', {
       zoomEnabled: true,
       panEnabled: true,
-      controlIconsEnabled: true,
+      controlIconsEnabled: false, // UI（+/-ボタン）を非表示にする
+      dblClickZoomEnabled: false, // ダブルクリックによるズームを無効にする
       fit: true,
       center: true,
       minZoom: 0.5,
       maxZoom: 10,
-      onClick: function(e) {
-        const path = e.target.closest('path');
-        if (path) {
-          handleMapClick(path);
-        }
-      }
+      onPan: () => { isDragging = true; },
+      onZoom: () => { isDragging = true; }
     });
     
     window.addEventListener('resize', () => {
@@ -71,59 +68,38 @@ fetch("https://script.google.com/macros/s/AKfycbwSUuIcBqMcUFLzKQG0cRpiUw42SrWg9i
     alert('データの取得に失敗しました。ページを再読み込みしてください。');
   });
 
-function createPageButton(buttonName) {
-  const btn = document.createElement("button");
-  btn.innerText = buttonName;
-  btn.onclick = function() {
-    selectedPage = buttonName;
-    // alert(`「${buttonName}」タブを選択しました。`); // 頻繁に表示されるのでコメントアウト推奨
-    document.querySelectorAll('#button-container button').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    renderMapForTab(selectedPage);
-  };
-  const container = document.getElementById("button-container");
-  if (container && pagename.indexOf(buttonName) > 0) { // IDボタンは表示しない
-      container.appendChild(btn);
-  }
-}
-
 function setupUI() {
     pagename.forEach(name => createPageButton(name));
+    
+    const mapElement = document.getElementById('map');
+    if (mapElement) {
+        mapElement.addEventListener('mousedown', () => {
+            isDragging = false;
+        });
+        mapElement.addEventListener('click', (e) => {
+            if (isDragging) {
+                return;
+            }
+            const path = e.target.closest('path');
+            if (path) {
+                handleMapClick(path);
+            }
+        });
+    }
+
     const createCountryBtn = document.getElementById('create-country-btn');
     if (createCountryBtn) createCountryBtn.addEventListener('click', handleCreateCountryBtnClick);
     const saveDataBtn = document.getElementById('save-data-btn');
     if (saveDataBtn) saveDataBtn.addEventListener('click', saveData);
 }
 
-function renderMapForTab(tabName) {
-    const colIndex = pagename.indexOf(tabName);
-    if (colIndex === -1) return;
-    maprows.forEach(row => {
-        const pathId = row[0];
-        const path = document.getElementById(pathId);
-        if (!path) return;
-        const cellValue = row[colIndex];
-        if (!cellValue) {
-            path.style.fill = '#eee';
-            return;
-        }
-        if (tabName === "国") {
-            const countryInfo = countryall.find(c => c[0] === cellValue);
-            path.style.fill = countryInfo ? countryInfo[1] : '#eee';
-        } else {
-            const numValue = parseInt(cellValue, 10);
-            path.style.fill = !isNaN(numValue) ? getGradientColor(numValue) : '#eee';
-        }
-    });
-    console.log(`マップを「${tabName}」のデータで更新しました。`);
-}
-
 function handleMapClick(path) {
-  console.log("クリックされたPathの情報:", path); // ★この行を追加
+    console.log("クリックされたPathの情報:", path);
     const datapath = path.id;
-    const rowIndex = maprows.findIndex(row => row[0] === datapath);
+    const rowIndex = maprows.findIndex(row => String(row[0]).trim() === datapath.trim());
     if (rowIndex === -1) {
-        document.getElementById("infoBox").innerHTML = `<p>${datapath}のデータは見つかりませんでした。</p>`;
+        console.error(`ID「${datapath}」に一致するデータがスプレッドシートに見つかりませんでした。`);
+        document.getElementById("infoBox").innerHTML = `<p>ID「${datapath}」のデータは見つかりませんでした。</p><p>スプレッドシートのIDと一致しているか確認してください。</p>`;
         return;
     }
     displayPathInfo(maprows[rowIndex]);
@@ -175,6 +151,41 @@ function handleMapClick(path) {
     displayPathInfo(maprows[rowIndex]);
 }
 
+function createPageButton(buttonName) {
+  const btn = document.createElement("button");
+  btn.innerText = buttonName;
+  btn.onclick = function() {
+    selectedPage = buttonName;
+    document.querySelectorAll('#button-container button').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    renderMapForTab(selectedPage);
+  };
+  const container = document.getElementById("button-container");
+  if (container && pagename.indexOf(buttonName) > 0) {
+      container.appendChild(btn);
+  }
+}
+function renderMapForTab(tabName) {
+    const colIndex = pagename.indexOf(tabName);
+    if (colIndex === -1) return;
+    maprows.forEach(row => {
+        const pathId = row[0];
+        const path = document.getElementById(pathId);
+        if (!path) return;
+        const cellValue = row[colIndex];
+        if (!cellValue) {
+            path.style.fill = '#eee';
+            return;
+        }
+        if (tabName === "国") {
+            const countryInfo = countryall.find(c => c[0] === cellValue);
+            path.style.fill = countryInfo ? countryInfo[1] : '#eee';
+        } else {
+            const numValue = parseInt(cellValue, 10);
+            path.style.fill = !isNaN(numValue) ? getGradientColor(numValue) : '#eee';
+        }
+    });
+}
 function handleCreateCountryBtnClick() {
     const btn = document.getElementById('create-country-btn');
     isCreatingCountry = !isCreatingCountry;
@@ -219,7 +230,6 @@ function handleCreateCountryBtnClick() {
         selectedPathsForNewCountry = [];
     }
 }
-
 function displayPathInfo(pathData) {
     const infoBox = document.getElementById("infoBox");
     if (infoBox) {
@@ -230,22 +240,19 @@ function displayPathInfo(pathData) {
         infoBox.innerHTML = `<h3>${pathData[0]}の情報</h3><ul>${listItems}</ul>`;
     }
 }
-
 function getGradientColor(value) {
     const hue = 120 - (value - 1) * (120 / 99);
     return `hsl(${hue}, 100%, 50%)`;
 }
-
 function getRandomColor() {
     return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
 }
-
 async function saveData() {
     if(!confirm("現在の変更をサーバーに保存しますか？")) return;
     const mapDataToSave = [pagename, ...maprows];
     const countryDataToSave = countryall;
     try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbwSUuIcBqMcUFLzKQG0cRpiUw42SrWg9i9JNFzAVBsPnxgXG4TDmz2Y6d7gYgQANCNrAQ/exec", {
+        const response = await fetch("GASのURL", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
