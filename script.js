@@ -14,7 +14,7 @@ let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("GASのURL") // ※ご自身のGASのURLに書き換えてください
+fetch("https://script.google.com/macros/s/AKfycbyjaw9HWt0MqHqdcUq2hyQVMc-mMK0kBlEdY781p8DlMuiTyKfd_-VK3oAV8rYGNbv44Q/exec") // ※ご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
     const mapContainer = document.getElementById('map-container');
@@ -252,7 +252,7 @@ async function saveData() {
     const mapDataToSave = [pagename, ...maprows];
     const countryDataToSave = countryall;
     try {
-        const response = await fetch("GASのURL", {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyjaw9HWt0MqHqdcUq2hyQVMc-mMK0kBlEdY781p8DlMuiTyKfd_-VK3oAV8rYGNbv44Q/exec", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
