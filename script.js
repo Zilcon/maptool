@@ -14,7 +14,7 @@ let newCountryInfo = { name: '', color: '' };
 let selectedPathsForNewCountry = [];
 
 // ===== データ取得と初期設定 =====
-fetch("wild-pond-809d.zilcon211006.workers.dev") // ※ご自身のGASのURLに書き換えてください
+fetch("https://wild-pond-809d.zilcon211006.workers.dev") // ※ご自身のGASのURLに書き換えてください
   .then(res => res.ok ? res.json() : Promise.reject(new Error('Network response was not ok.')))
   .then(data => {
     const mapContainer = document.getElementById('map-container');
@@ -252,7 +252,7 @@ async function saveData() {
     const mapDataToSave = [pagename, ...maprows];
     const countryDataToSave = countryall;
     try {
-        const response = await fetch("wild-pond-809d.zilcon211006.workers.dev", {
+        const response = await fetch("https://wild-pond-809d.zilcon211006.workers.dev", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ MapData: mapDataToSave, CountryData: countryDataToSave }),
